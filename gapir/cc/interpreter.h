@@ -129,6 +129,9 @@ class Interpreter {
   // 7th to 13th MSB (both inclusive) of the opcode
   BaseType extractType(uint32_t opcode) const;
 
+  // Get 6 bit data out from an opcode located in the 26-20 LSB of the opcode.
+  uint32_t extract6bitData(uint32_t opcode) const;
+
   // Get 20 bit data out from an opcode located in the 20 LSB of the opcode.
   uint32_t extract20bitData(uint32_t opcode) const;
 
@@ -143,9 +146,9 @@ class Interpreter {
   Result load(uint32_t opcode);
   Result pop(uint32_t opcode);
   Result storeV(uint32_t opcode);
-  Result store();
+  Result store(uint32_t);
   Result resource(uint32_t);
-  Result post();
+  Result post(uint32_t);
   Result copy(uint32_t opcode);
   Result clone(uint32_t opcode);
   Result strcpy(uint32_t opcode);
@@ -156,7 +159,7 @@ class Interpreter {
   Result jumpLabel(uint32_t opcode);
   Result jumpNZ(uint32_t opcode);
   Result jumpZ(uint32_t opcode);
-  Result notification();
+  Result notification(uint32_t);
   Result wait(uint32_t opcode);
 
   // Returns true, if address..address+size(type) is "constant" memory.
@@ -172,7 +175,7 @@ class Interpreter {
   bool isWriteAddress(void* address) const;
 
   // Interpret one specific opcode.
-  Result interpret(uint32_t opcode);
+  // Result interpret(uint32_t opcode);
 
   // The crash handler used for catching and reporting crashes.
   core::CrashHandler& mCrashHandler;

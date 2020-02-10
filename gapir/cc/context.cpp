@@ -123,13 +123,11 @@ bool Context::interpret(bool cleanup, bool isPrewarm) {
     if (api_index == gapir::Vulkan::INDEX) {
       // There is only one vulkan "renderer" so we create it when requested.
       mVulkanRenderer = VulkanRenderer::create();
-      if (mVulkanRenderer->isValid()) {
         mVulkanRenderer->setListener(this);
         Api* api = mVulkanRenderer->api();
         interpreter->setRendererFunctions(api->index(), &api->mFunctions);
         GAPID_INFO("Bound Vulkan renderer");
         return true;
-      }
     }
     return false;
   };
@@ -231,7 +229,6 @@ void Context::registerCallbacks(Interpreter* interpreter) {
       Gles::INDEX, Builtins::ReplayFrameDelimiter,
       [this](uint32_t label, Stack* stack, bool) {
         uint32_t id = stack->pop<uint32_t>();
-        if (stack->isValid()) {
           GAPID_INFO("[%u]replayFrameDelimiter(%u)", label, id);
           auto found = mGlesRenderers.find(id);
           if (found == mGlesRenderers.end()) {
@@ -240,18 +237,12 @@ void Context::registerCallbacks(Interpreter* interpreter) {
           }
           found->second->frameDelimiter();
           return true;
-        } else {
-          GAPID_WARNING(
-              "[%u]Error during calling function replayFrameDelimiter", label);
-          return false;
-        }
       });
 
   interpreter->registerBuiltin(
       Gles::INDEX, Builtins::ReplayCreateRenderer,
       [this](uint32_t label, Stack* stack, bool) {
         uint32_t id = stack->pop<uint32_t>();
-        if (stack->isValid()) {
           GAPID_INFO("[%u]replayCreateRenderer(%u)", label, id);
           auto existing = mGlesRenderers.find(id);
           if (existing != mGlesRenderers.end()) {
@@ -279,11 +270,7 @@ void Context::registerCallbacks(Interpreter* interpreter) {
           renderer->setListener(this);
           mGlesRenderers[id] = renderer;
           return true;
-        } else {
-          GAPID_WARNING(
-              "[%u]Error during calling function replayCreateRenderer", label);
-          return false;
-        }
+
       });
 
   interpreter->registerBuiltin(
@@ -291,7 +278,6 @@ void Context::registerCallbacks(Interpreter* interpreter) {
       [this, interpreter](uint32_t label, Stack* stack, bool) {
         bool resetViewportScissor = stack->pop<bool>();
         uint32_t id = stack->pop<uint32_t>();
-        if (stack->isValid()) {
           GAPID_INFO("[%u]replayBindRenderer(%u, %s)", label, id,
                      resetViewportScissor ? "true" : "false");
           auto renderer = mGlesRenderers[id];
@@ -301,18 +287,13 @@ void Context::registerCallbacks(Interpreter* interpreter) {
           GAPID_DEBUG("[%u]Bound renderer %u: %s - %s", label, id,
                       renderer->name(), renderer->version());
           return true;
-        } else {
-          GAPID_WARNING("[%u]Error during calling function replayBindRenderer",
-                        label);
-          return false;
-        }
+
       });
 
   interpreter->registerBuiltin(
       Gles::INDEX, Builtins::ReplayUnbindRenderer,
       [this](uint32_t label, Stack* stack, bool) {
         uint32_t id = stack->pop<uint32_t>();
-        if (stack->isValid()) {
           GAPID_DEBUG("[%u]replayUnbindRenderer(%" PRIu32 ")", label, id);
           auto renderer = mGlesRenderers[id];
           renderer->unbind();
@@ -321,11 +302,6 @@ void Context::registerCallbacks(Interpreter* interpreter) {
           // interpreter->setRendererFunctions(api->index(), nullptr);
           GAPID_DEBUG("[%u]Unbound renderer %" PRIu32, label, id);
           return true;
-        } else {
-          GAPID_WARNING(
-              "[%u]Error during calling function replayUnbindRenderer", label);
-          return false;
-        }
       });
 
   interpreter->registerBuiltin(
@@ -340,14 +316,6 @@ void Context::registerCallbacks(Interpreter* interpreter) {
         backbuffer.width = stack->pop<int32_t>();
         uint32_t id = stack->pop<uint32_t>();
 
-        if (!stack->isValid()) {
-          GAPID_WARNING(
-              "[%u]Error during calling function replayChangeBackbuffer",
-              label);
-          return false;
-        }
-
-        if (stack->isValid()) {
           GAPID_INFO("[%u]replayChangeBackbuffer(%d, %d, 0x%x, 0x%x, 0x%x)",
                      label, backbuffer.width, backbuffer.height,
                      backbuffer.format.color, backbuffer.format.depth,
@@ -362,12 +330,6 @@ void Context::registerCallbacks(Interpreter* interpreter) {
           }
           renderer->setBackbuffer(backbuffer);
           return true;
-        } else {
-          GAPID_WARNING(
-              "[%u]Error during calling function replayChangeBackbuffer",
-              label);
-          return false;
-        }
       });
 
   interpreter->registerBuiltin(
@@ -375,13 +337,6 @@ void Context::registerCallbacks(Interpreter* interpreter) {
       [this](uint32_t label, Stack* stack, bool pushReturn) {
         uint32_t texId = stack->pop<uint32_t>();
         uint32_t ctxId = stack->pop<uint32_t>();
-
-        if (!stack->isValid()) {
-          GAPID_WARNING(
-              "[%u]Error during calling function replayCreateExternalImage",
-              label);
-          return false;
-        }
 
         auto renderer = mGlesRenderers[ctxId];
         if (renderer == nullptr) {
@@ -412,10 +367,7 @@ void Context::registerCallbacks(Interpreter* interpreter) {
           auto* pInstance = stack->pop<Vulkan::VkInstance*>();
           auto* pAllocator = stack->pop<Vulkan::VkAllocationCallbacks*>();
           auto* pCreateInfo = stack->pop<Vulkan::VkInstanceCreateInfo*>();
-          if (!stack->isValid()) {
-            GAPID_ERROR("Error during calling funtion ReplayCreateVkInstance");
-            return false;
-          }
+
           uint32_t result = Vulkan::VkResult::VK_SUCCESS;
 
           if (api->replayCreateVkInstanceImpl(stack, pCreateInfo, pAllocator,
@@ -468,10 +420,7 @@ void Context::registerCallbacks(Interpreter* interpreter) {
           auto pAllocator = stack->pop<Vulkan::VkAllocationCallbacks*>();
           auto pCreateInfo = stack->pop<Vulkan::VkDeviceCreateInfo*>();
           auto physicalDevice = static_cast<size_val>(stack->pop<size_val>());
-          if (!stack->isValid()) {
-            GAPID_ERROR("Error during calling funtion ReplayCreateVkDevice");
-            return false;
-          }
+
           uint32_t result = Vulkan::VkResult::VK_SUCCESS;
 
           if (api->replayCreateVkDeviceImpl(stack, physicalDevice, pCreateInfo,
@@ -706,12 +655,6 @@ void Context::registerCallbacks(Interpreter* interpreter) {
           auto* handle = stack->pop<Vulkan::VkDebugReportCallbackEXT*>();
           auto* create_info =
               stack->pop<Vulkan::VkDebugReportCallbackCreateInfoEXT*>();
-          if (!stack->isValid()) {
-            GAPID_ERROR(
-                "Error during calling funtion "
-                "ReplayCreateVkDebugReportCallback");
-            return false;
-          }
 
           // Populate the create info
           create_info->pfnCallback =
@@ -764,11 +707,6 @@ bool Context::loadResource(Stack* stack) {
   uint32_t resourceId = stack->pop<uint32_t>();
   void* address = stack->pop<void*>();
 
-  if (!stack->isValid()) {
-    GAPID_WARNING("Error during loadResource");
-    return false;
-  }
-
   const auto& resource = mReplayRequest->getResources()[resourceId];
 
   if (!mResourceLoader->load(&resource, 1, address, resource.getSize())) {
@@ -783,26 +721,15 @@ bool Context::postData(Stack* stack) {
   const uint32_t count = stack->pop<uint32_t>();
   const void* address = stack->pop<const void*>();
 
-  if (!stack->isValid()) {
-    GAPID_WARNING("Error during postData");
-    return false;
-  }
-
   return mPostBuffer->push(address, count);
 }
 
 bool Context::flushPostBuffer(Stack* stack) {
-  if (!stack->isValid()) {
-    GAPID_WARNING("Error during flushPostBuffer");
-    return false;
-  }
-
   return mPostBuffer->flush();
 }
 
 bool Context::startTimer(Stack* stack) {
   size_t index = static_cast<size_t>(stack->pop<uint8_t>());
-  if (stack->isValid()) {
     if (index < MAX_TIMERS) {
       GAPID_INFO("startTimer(%zu)", index);
       mTimers[index].Start();
@@ -810,15 +737,11 @@ bool Context::startTimer(Stack* stack) {
     } else {
       GAPID_WARNING("StartTimer called with invalid index %zu", index);
     }
-  } else {
-    GAPID_WARNING("Error while calling function StartTimer");
-  }
   return false;
 }
 
 bool Context::stopTimer(Stack* stack, bool pushReturn) {
   size_t index = static_cast<size_t>(stack->pop<uint8_t>());
-  if (stack->isValid()) {
     if (index < MAX_TIMERS) {
       GAPID_INFO("stopTimer(%zu)", index);
       uint64_t ns = mTimers[index].Stop();
@@ -829,9 +752,6 @@ bool Context::stopTimer(Stack* stack, bool pushReturn) {
     } else {
       GAPID_WARNING("StopTimer called with invalid index %zu", index);
     }
-  } else {
-    GAPID_WARNING("Error while calling function StopTimer");
-  }
   return false;
 }
 
@@ -841,20 +761,11 @@ bool Context::sendNotificationData(Stack* stack) {
   const void* address = stack->pop<const void*>();
   auto label = mInterpreter->getLabel();
 
-  if (!stack->isValid()) {
-    GAPID_WARNING("Stack is invalid during sendNotificationData");
-    return false;
-  }
-
   return mSrv->sendNotificationData(id, label, address, count);
 }
 
 bool Context::waitForFence(Stack* stack) {
   const uint32_t id = stack->pop<uint32_t>();
-  if (!stack->isValid()) {
-    GAPID_WARNING("Stack is invalid during waitForFence");
-    return false;
-  }
   auto fr = mSrv->getFenceReady(id);
   if (fr == nullptr) {
     GAPID_WARNING("FenceReady is invalid during waitForFence");
